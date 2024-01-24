@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Test</title>
+  <script src="https://cdn.socket.io/4.1.3/socket.io.min.js"></script>
+</head>
+<body>
+  <!-- Your HTML content here -->
+
+  <script>
+    // Now you can use the io variable here
+    const socket = io.connect('http://localhost:5000'); // Adjust the port if necessary
+    socket.emit('chat message', 'Hello, server!');
+
+    socket.on('chat message', (msg) => {
+  console.log('Received message: ' + msg);
+    });
+  </script>
+</body>
+</html>
