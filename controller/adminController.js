@@ -41,6 +41,85 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/list-new-users', async (req, res) => {
+  try {
+    console.log("listing users")
+    const users = await signup.find({isRegisteredUser:false}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName clerkPhone bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        regNo: user.regNo,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        DOB: user.DOB,
+        address: user.address,
+        officeAddress: user.officeAddress,
+        clerkName: user.clerkName,
+        clerkPhone: user.clerkPhone,
+        bloodGroup: user.bloodGroup,
+        welfareMember: user.welfareMember,
+        enrollmentDate: user.enrollmentDate,
+        pincode: user.pincode,
+        district: user.district,
+        state: user.state,
+        whatsAppno: user.whatsAppno,
+        
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.get('/list-valid-users', async (req, res) => {
+  try {
+    console.log("listing users")
+    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName clerkPhone bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        regNo: user.regNo,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        DOB: user.DOB,
+        address: user.address,
+        officeAddress: user.officeAddress,
+        clerkName: user.clerkName,
+        clerkPhone: user.clerkPhone,
+        bloodGroup: user.bloodGroup,
+        welfareMember: user.welfareMember,
+        enrollmentDate: user.enrollmentDate,
+        pincode: user.pincode,
+        district: user.district,
+        state: user.state,
+        whatsAppno: user.whatsAppno,
+        
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 router.delete('/delete/:regNo', async (req, res) => {
   const regNoToDelete = req.params.regNo;

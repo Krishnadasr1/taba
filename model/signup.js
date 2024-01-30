@@ -4,29 +4,36 @@ const signupSchema = new mongoose.Schema({
   regNo: {
     type: String,
     required: true,
+    default:""
   },
 
   firstName: {
     type: String,
+    default:""
   },
   lastName: {
     type: String,
+    default:""
   },
 
   phone: {
     type: String,
     required: true,
+    default:""
   },
   password: {
     type: String,
     required: true,
+    default:""
   },
 
   email: {
     type: String,
+    default:""
   },
   DOB: {
     type:String,
+    default:""
   },
   whatsAppno:{
     type: String,
@@ -35,38 +42,47 @@ const signupSchema = new mongoose.Schema({
 
   address: {
     type: String,
+    default:""
   },
 
   officeAddress: {
     type: String,
+    default:""
   },
 
   clerkName: {
-    type: Array
+    type: Array,
+    default:""
   },
 
   clerkPhone: {
-    type: Array
+    type: Array,
+    default:""
   },
 
   bloodGroup: {
-    type: String
+    type: String,
+    default:""
   },
 
   welfareMember : {
     type: String,
+    default:""
   },
 
   pincode: {
-    type: String
+    type: String,
+    default:""
   },
 
   district: {
-    type: String
+    type: String,
+    default:""
   },
 
   state: {
     type: String,
+    default:""
   },
 
   annualFee: {
@@ -76,6 +92,7 @@ const signupSchema = new mongoose.Schema({
 
   enrollmentDate: {
     type: String,
+    default:""
     // required:true,
   },
   image: {

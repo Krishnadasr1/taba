@@ -85,7 +85,7 @@ router.post('/upload', (req, res) => {
       // Save the user to the database
       await newUser.save();
 
-      res.status(200).json({ message: 'User registered and image uploaded successfully'});
+      res.status(200).json({ message: 'User registered and image uploaded successfully',newUser:{_id:newUser._id}});
     } catch (error) {
       console.log(error)
           // Additional error handling for multer errors
@@ -130,6 +130,7 @@ router.post('/login', async (req, res) => {
     return res.status(200).json({ message: 'login successful', token,
     user:{
       regNo : user.regNo || "",
+      _id : user._id
       
 
     }});
@@ -145,7 +146,7 @@ router.post('/login', async (req, res) => {
 router.get('/list_users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName clerkPhone bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName clerkPhone bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
