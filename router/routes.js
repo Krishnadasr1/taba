@@ -8,4 +8,6 @@ app.use(cors())
 
 app.use('/user',require('../controller/userController'));
 app.use('/admin',require('../controller/adminController'));
+app.use('/notification',require('../controller/notificationController'));
+
 module.exports =app;

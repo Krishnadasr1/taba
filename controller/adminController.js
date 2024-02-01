@@ -16,6 +16,7 @@ router.post('/login', async (req, res) => {
   try {
     console.log("login")
     const {userName, password } = req.body;
+    console.log(req.body.userName,req.body.password)
 
     const user = await admin.findOne({ userName });
 
@@ -30,10 +31,7 @@ router.post('/login', async (req, res) => {
     }
 
     
-    return res.status(200).json({ message: 'login successful', 
-    user:{
-      userName : user.userName || "",
-    }});
+    return res.status(200).json({ message: 'login successful'});
    
   } catch (error) {
     console.log(error);
@@ -44,7 +42,7 @@ router.post('/login', async (req, res) => {
 router.get('/list-new-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:false}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName clerkPhone bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:false}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
@@ -57,8 +55,10 @@ router.get('/list-new-users', async (req, res) => {
         DOB: user.DOB,
         address: user.address,
         officeAddress: user.officeAddress,
-        clerkName: user.clerkName,
-        clerkPhone: user.clerkPhone,
+        clerkName1: user.clerkName1,
+        clerkName2: user.clerkName2,
+        clerkPhone1: user.clerkPhone1,
+        clerkPhone2: user.clerkPhone2,
         bloodGroup: user.bloodGroup,
         welfareMember: user.welfareMember,
         enrollmentDate: user.enrollmentDate,
@@ -84,7 +84,7 @@ router.get('/list-new-users', async (req, res) => {
 router.get('/list-valid-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName clerkPhone bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
@@ -97,8 +97,10 @@ router.get('/list-valid-users', async (req, res) => {
         DOB: user.DOB,
         address: user.address,
         officeAddress: user.officeAddress,
-        clerkName: user.clerkName,
-        clerkPhone: user.clerkPhone,
+        clerkName1: user.clerkName1,
+        clerkName2: user.clerkName2,
+        clerkPhone1: user.clerkPhone1,
+        clerkPhone2: user.clerkPhone2,
         bloodGroup: user.bloodGroup,
         welfareMember: user.welfareMember,
         enrollmentDate: user.enrollmentDate,
