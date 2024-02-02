@@ -21,21 +21,6 @@ admin.initializeApp({
 
 const registrationToken = 'YOUR_DEVICE_REGISTRATION_TOKEN';
 
-const message = {
-  notification: {
-    title: 'Your Notification Title',
-    body: 'Your Notification Body',
-  },
-  token: registrationToken,
-};
-
-admin.messaging().send(message)
-  .then((response) => {
-    console.log('Successfully sent message:', response);
-  })
-  .catch((error) => {
-    console.error('Error sending message:', error);
-  });
 
 //////////////////////
 
@@ -74,11 +59,11 @@ router.post('/send-notification', (req, res) => {
         title,
         body,
       },
-      tokens: registeredTokens, // Use the stored tokens for targeted notifications
+      tokens: registrationToken, // Use the stored tokens for targeted notifications
     };
   
     // Send the FCM message
-    admin.messaging().sendMulticast(message)
+    admin.messaging().send(message)
       .then((response) => {
         console.log('Successfully sent message:', response);
         res.send('Notification sent successfully');

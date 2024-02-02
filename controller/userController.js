@@ -150,49 +150,6 @@ router.post('/login', async (req, res) => {
 });
 
 
-// router.get('/list_users', async (req, res) => {
-//   try {
-//     console.log("listing users")
-//     const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
-
-//     // Convert binary image data to Base64
-//     const usersWithBase64Image = users.map(user => {
-//       return {
-//         regNo: user.regNo,
-//         phone: user.phone,
-//         firstName: user.firstName,
-//         lastName: user.lastName,
-//         email: user.email,
-//         DOB: user.DOB,
-//         address: user.address,
-//         officeAddress: user.officeAddress,
-//         clerkName1: user.clerkName1,
-//         clerkName2: user.clerkName2,
-//         clerkPhone1: user.clerkPhone1,
-//         clerkPhone2: user.clerkPhone2,
-//         bloodGroup: user.bloodGroup,
-//         welfareMember: user.welfareMember,
-//         enrollmentDate: user.enrollmentDate,
-//         pincode: user.pincode,
-//         district: user.district,
-//         state: user.state,
-//         whatsAppno: user.whatsAppno,
-        
-//         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
-//       };
-//     });
-
-//     // Respond with the array of user data including Base64 image
-//     res.status(200).json(usersWithBase64Image);
-//   } catch (error) {
-//     console.log(error);
-
-//     // Respond with a 500 Internal Server Error
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// });
-
-
 router.post('/list_users', async (req, res) => {
   try {
     const page = parseInt(req.body.page) || 1;
@@ -203,7 +160,7 @@ router.post('/list_users', async (req, res) => {
     const skip = (page - 1) * pageSize;
 
     const users = await signup
-      .find({ isRegisteredUser: true })
+      .find({ isRegisteredUser:true })
       .select('regNo phone image firstName lastName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
       .skip(skip)
       .limit(pageSize);
@@ -293,7 +250,7 @@ router.put('/update/:userId', upload.single('image'), async (req, res) => {
   try {
     console.log("..........update...........");
     const userId = req.params.userId;
-    const { regNo, phone, password, firstName, lastName, email, DOB, whatsAppno, address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember, pincode, district, state,  } = req.body;
+    const { regNo, phone, firstName, lastName, email, DOB, whatsAppno, address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember, pincode, district, state,  } = req.body;
 
     // Find the user by ID
     const user = await signup.findById(userId);
@@ -415,31 +372,110 @@ function handleRegistrationError(error, res) {
 
 
 
+// router.post('/search_users', async (req, res) => {
+//   try {
+//     console.log("searching users");
+
+//     const { search } = req.body;
+
+//     if (!search) {
+//       return res.status(400).json({ message: 'Search input is required in the request body.' });
+//     }
+
+//     // Use a case-insensitive regular expression for the search query
+//     const Query = new RegExp(search, 'i');
+
+//     // Search for users with matching firstName, lastName, phone, or regNo
+//     const users = await signup.find({
+//       $or: [
+//         { firstName: Query },
+//         { lastName: Query },
+//         { phone: Query },
+//         { regNo: Query },
+//         { DOB: Query },
+//         { bloodGroup: Query },
+//         { welfareMember: Query },
+//       ]
+//     }, 'regNo phone image firstName lastName email DOB address pincode district state');
+
+//     // Convert binary image data to Base64
+//     const usersWithBase64Image = users.map(user => {
+//       return {
+//         enrollmentDate: user.enrollmentDate,
+//         regNo: user.regNo,
+//         phone: user.phone,
+//         firstName: user.firstName,
+//         lastName: user.lastName,
+//         email: user.email,
+//         DOB: user.DOB,
+//         whatsAppno: user.whatsAppno,
+//         officeAddress: user.officeAddress,
+//         clerkName1:user.clerkName1,
+//         clerkName2:user.clerkName2,
+//         clerkPhone1: user.clerkPhone1,
+//         clerkPhone2: user.clerkPhone2,
+//         bloodGroup: user.bloodGroup,
+//         welfareMember: user.welfareMember,  
+//         address: user.address,
+//         pincode: user.pincode,
+//         district: user.district,
+//         state: user.state,
+//         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+//       };
+//     });
+
+//     // Respond with the array of user data including Base64 image
+//     res.status(200).json(usersWithBase64Image);
+//   } catch (error) {
+//     // Log the error
+//     console.error(error);
+
+//     // Respond with a 500 Internal Server Error
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// });
+
+
 router.post('/search_users', async (req, res) => {
   try {
     console.log("searching users");
 
-    const { search } = req.body;
+    const { search, page } = req.body;
+    const pageSize = 10;
+    
+    // Default page number to 1 if not provided
+    const pageNumber = page || 1;
+
+    console.log(`Listing users - Page: ${pageNumber}, PageSize: ${pageSize}`);
+
 
     if (!search) {
       return res.status(400).json({ message: 'Search input is required in the request body.' });
     }
 
     // Use a case-insensitive regular expression for the search query
-    const Query = new RegExp(search, 'i');
+    const query = new RegExp(search, 'i');
+
+    // Calculate the skip value based on the page number
+    const skip = (pageNumber - 1) * pageSize;
 
     // Search for users with matching firstName, lastName, phone, or regNo
-    const users = await signup.find({
-      $or: [
-        { firstName: Query },
-        { lastName: Query },
-        { phone: Query },
-        { regNo: Query },
-        { DOB: Query },
-        { bloodGroup: Query },
-        { welfareMember: Query },
-      ]
-    }, 'regNo phone image firstName lastName email DOB address pincode district state');
+    const users = await signup.find(
+      {
+        $or: [
+          { firstName: query },
+          { lastName: query },
+          { phone: query },
+          { regNo: query },
+          { DOB: query },
+          { bloodGroup: query },
+          { welfareMember: query },
+        ],
+      },
+      'regNo phone image firstName lastName email DOB address pincode district state'
+    )
+      .skip(skip)
+      .limit(pageSize);
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
@@ -453,12 +489,12 @@ router.post('/search_users', async (req, res) => {
         DOB: user.DOB,
         whatsAppno: user.whatsAppno,
         officeAddress: user.officeAddress,
-        clerkName1:user.clerkName1,
-        clerkName2:user.clerkName2,
+        clerkName1: user.clerkName1,
+        clerkName2: user.clerkName2,
         clerkPhone1: user.clerkPhone1,
         clerkPhone2: user.clerkPhone2,
         bloodGroup: user.bloodGroup,
-        welfareMember: user.welfareMember,  
+        welfareMember: user.welfareMember,
         address: user.address,
         pincode: user.pincode,
         district: user.district,
@@ -477,6 +513,8 @@ router.post('/search_users', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+
 
 router.post('/request-reset',async(req,res)=>{
   try{
