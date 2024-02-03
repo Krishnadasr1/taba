@@ -127,13 +127,13 @@ const signupSchema = new mongoose.Schema({
   //   data: Buffer
   // },
   isRegisteredUser: {
-    type: Boolean,
+    type: String,
     required: true,
     default: false
   },
 
   isValidUser: {
-    type: Boolean,
+    type: String,
     required: true,
     default:false
   
