@@ -275,12 +275,7 @@ router.put('/update/:userId', upload.single('image'), async (req, res) => {
     user.district = district || user.district;
     user.state = state || user.state;
 
-    if (password) {
-      const saltRounds = 10;
-      const salt = await bcrypt.genSalt(saltRounds);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      user.password = hashedPassword;
-    }
+    
 
     // Check if an image was uploaded
     if (req.file) {

@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const signupSchema = new mongoose.Schema({
   regNo: {
     type: String,
-    required: true,
     default:""
   },
 
@@ -15,12 +14,10 @@ const signupSchema = new mongoose.Schema({
 
   phone: {
     type: String,
-    required: true,
     default:""
   },
   password: {
     type: String,
-    required: true,
     default:""
   },
 
