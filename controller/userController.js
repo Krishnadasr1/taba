@@ -32,7 +32,7 @@ router.post('/upload', (req, res) => {
   upload.single('image')(req, res, async (err) => {
     try {
       console.log("..........enter...........");
-      const {regNo,phone,password,enrollmentDate,firstName,lastName,email,DOB,whatsAppno,address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember,pincode,state,district} = req.body;
+      const {regNo,phone,password,enrollmentDate,firstName,email,DOB,whatsAppno,address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember,pincode,state,district} = req.body;
 
       // Check if the user already exists with the given phone
       // const existingUser = await signup.findOne({ phone });
@@ -57,7 +57,6 @@ router.post('/upload', (req, res) => {
         isRegisteredUser: false,
         isValidUser: true,
         firstName,
-        lastName,
         address,
         officeAddress,
         clerkName1,
@@ -161,7 +160,7 @@ router.post('/list_users', async (req, res) => {
 
     const users = await signup
       .find({ isRegisteredUser:true })
-      .select('regNo phone image firstName lastName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .select('regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
       .skip(skip)
       .limit(pageSize);
 
@@ -171,7 +170,6 @@ router.post('/list_users', async (req, res) => {
         regNo: user.regNo,
         phone: user.phone,
         firstName: user.firstName,
-        lastName: user.lastName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -208,14 +206,13 @@ router.post('/get_by_regno', async (req, res) => {
      if (!regNo) {
       return res.status(400).json({ message: 'Missing regNo in request body' });
     }
-    const users = await signup.find({regNo}, 'regNo phone image firstName lastName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     const usersWithBase64Image = users.map(user => {
       return {
         regNo: user.regNo,
         phone: user.phone,
         firstName: user.firstName,
-        lastName: user.lastName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -250,7 +247,7 @@ router.put('/update/:userId', upload.single('image'), async (req, res) => {
   try {
     console.log("..........update...........");
     const userId = req.params.userId;
-    const { regNo, phone, firstName, lastName, email, DOB, whatsAppno, address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember, pincode, district, state,  } = req.body;
+    const { regNo, phone, firstName, email, DOB, whatsAppno, address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember, pincode, district, state,  } = req.body;
 
     // Find the user by ID
     const user = await signup.findById(userId);
@@ -263,7 +260,6 @@ router.put('/update/:userId', upload.single('image'), async (req, res) => {
     user.regNo = regNo || user.regNo;
     user.phone = phone || user.phone;
     user.firstName = firstName || user.firstName;
-    user.lastName = lastName || user.lastName;
     user.email = email || user.email;
     user.DOB = DOB || user.DOB;
     user.whatsAppno = whatsAppno || user.whatsAppno;
@@ -464,7 +460,6 @@ router.post('/search_users', async (req, res) => {
       {
         $or: [
           { firstName: query },
-          { lastName: query },
           { phone: query },
           { regNo: query },
           { DOB: query },
@@ -472,7 +467,7 @@ router.post('/search_users', async (req, res) => {
           { welfareMember: query },
         ],
       },
-      'regNo phone image firstName lastName email DOB address pincode district state'
+      'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state'
     )
       .skip(skip)
       .limit(pageSize);
@@ -484,7 +479,6 @@ router.post('/search_users', async (req, res) => {
         regNo: user.regNo,
         phone: user.phone,
         firstName: user.firstName,
-        lastName: user.lastName,
         email: user.email,
         DOB: user.DOB,
         whatsAppno: user.whatsAppno,

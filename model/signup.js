@@ -11,10 +11,7 @@ const signupSchema = new mongoose.Schema({
     type: String,
     default:""
   },
-  lastName: {
-    type: String,
-    default:""
-  },
+  
 
   phone: {
     type: String,
