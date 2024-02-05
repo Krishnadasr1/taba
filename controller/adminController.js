@@ -84,11 +84,12 @@ router.get('/list-new-users', async (req, res) => {
 router.get('/list-valid-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:true}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
+        _id: user._id,
         regNo: user.regNo,
         phone: user.phone,
         firstName: user.firstName,
@@ -122,11 +123,11 @@ router.get('/list-valid-users', async (req, res) => {
   }
 });
 
-router.delete('/delete/:regNo', async (req, res) => {
-  const regNoToDelete = req.params.regNo;
+router.delete('/delete/:userId', async (req, res) => {
+  const regNoToDelete = req.params.userId;
 
   try {
-    const deletedUser = await signup.findOneAndDelete({ regNo: regNoToDelete });
+    const deletedUser = await signup.findOneAndDelete({ _id: regNoToDelete });
 
     if (deletedUser) {
       return res.status(200).json({ message: 'User deleted successfully', user: deletedUser });
@@ -219,6 +220,55 @@ router.post('/upload', (req, res) => {
   });
 });
 
+router.get('/about',async(req,res)=>{
+  try{
+    const About = await about.find();
+
+    res.status(200).json({message:"success",About})
+  }
+  catch(error){
+    console.log(error);
+    res.status(500).json({message:"internal error"})
+  }
+});
+
+router.put('/update-about/:userId', upload.single('image'), async (req, res) => {
+  try {
+    console.log("..........update...........");
+    const userId = req.params.userId;
+    const { name,description  } = req.body;
+
+    const user = await about.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user fields
+    
+    user.name = name || user.name;
+    user.description = description || user.description;
+
+    
+
+    // Check if an image was uploaded
+    if (req.file) {
+      user.image = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+        name: req.file.originalname,
+      };
+    }
+
+    // Save the updated user to the database
+    await user.save();
+
+    res.status(200).json({ message: 'User updated successfully' });
+  } catch (error) {
+    handleRegistrationError(error, res);
+  }
+});
+
 const cron = require('node-cron');
 // 0 0 1 * * -once a month
 // */5 * * * * * -every 5 second
@@ -288,5 +338,210 @@ router.post('/updatePayment/:userId', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+router.post('/search_requests', async (req, res) => {
+  try {
+    console.log("searching users");
+
+    const { search, page } = req.body;
+    const pageSize = 1000;
+    
+    // Default page number to 1 if not provided
+    const pageNumber = page || 1;
+
+    console.log(`Listing users - Page: ${pageNumber}, PageSize: ${pageSize}`);
+
+
+    if (!search) {
+      return res.status(400).json({ message: 'Search input is required in the request body.' });
+    }
+
+    // Use a case-insensitive regular expression for the search query
+    const query = new RegExp(search, 'i');
+
+    // Calculate the skip value based on the page number
+    const skip = (pageNumber - 1) * pageSize;
+
+    // Search for users with matching firstName, lastName, phone, or regNo
+    const users = await signup.find( 
+      {
+        $and: [
+          {
+            $or: [
+              { firstName: query },
+              { phone: query },
+              { regNo: query },
+              { DOB: query },
+              { bloodGroup: query },
+              { welfareMember: query },
+            ],
+          },
+          { isRegisteredUser: false }, // Additional condition for registered users
+        ],
+      },
+      'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state'
+    )
+      .skip(skip)
+      .limit(pageSize);
+
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        enrollmentDate: user.enrollmentDate,
+        regNo: user.regNo,
+        phone: user.phone,
+        firstName: user.firstName,
+        email: user.email,
+        DOB: user.DOB,
+        whatsAppno: user.whatsAppno,
+        officeAddress: user.officeAddress,
+        clerkName1: user.clerkName1,
+        clerkName2: user.clerkName2,
+        clerkPhone1: user.clerkPhone1,
+        clerkPhone2: user.clerkPhone2,
+        bloodGroup: user.bloodGroup,
+        welfareMember: user.welfareMember,
+        address: user.address,
+        pincode: user.pincode,
+        district: user.district,
+        state: user.state,
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    // Log the error
+    console.error(error);
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.put('/invalid', async (req, res) => {
+  try {
+    const updateResult = await signup.updateMany({}, { $set: { isRegisteredUser: false } });
+
+    if (updateResult.nModified === 0) {
+      return res.status(404).json({ message: 'No user' });
+    }
+
+    res.status(200).json({ message: 'reverted :)' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { userName, newPassword } = req.body;
+    const user = await signup.findOne({ userName });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const saltRounds = 10;
+    const newSalt = await bcrypt.genSalt(saltRounds);
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, newSalt);
+
+    user.password = hashedNewPassword;
+    user.isValidUser = true;
+
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.post('/search_users', async (req, res) => {
+  try {
+    console.log("searching users");
+
+    const { search, page } = req.body;
+    const pageSize = 1000;
+    
+    // Default page number to 1 if not provided
+    const pageNumber = page || 1;
+
+    console.log(`Listing users - Page: ${pageNumber}, PageSize: ${pageSize}`);
+
+    if (!search) {
+      return res.status(400).json({ message: 'Search input is required in the request body.' });
+    }
+
+    // Escape special characters in the search query
+    const escapedSearch = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+    // Use a case-insensitive regular expression for the escaped search query
+    const query = new RegExp(escapedSearch, 'i');
+
+    // Calculate the skip value based on the page number
+    const skip = (pageNumber - 1) * pageSize;
+
+    // Search for users with matching firstName, lastName, phone, or regNo
+    const users = await signup.find( 
+      {
+        $and: [
+          {
+            $or: [
+              { firstName: query },
+              { phone: query },
+              { regNo: query },
+              { DOB: query },
+              { bloodGroup: query },
+              { welfareMember: query },
+            ],
+          },
+          { isRegisteredUser: true }, // Additional condition for registered users
+        ],
+      },
+      'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state'
+    )
+      .skip(skip)
+      .limit(pageSize);
+
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        enrollmentDate: user.enrollmentDate,
+        regNo: user.regNo,
+        phone: user.phone,
+        firstName: user.firstName,
+        email: user.email,
+        DOB: user.DOB,
+        whatsAppno: user.whatsAppno,
+        officeAddress: user.officeAddress,
+        clerkName1: user.clerkName1,
+        clerkName2: user.clerkName2,
+        clerkPhone1: user.clerkPhone1,
+        clerkPhone2: user.clerkPhone2,
+        bloodGroup: user.bloodGroup,
+        welfareMember: user.welfareMember,
+        address: user.address,
+        pincode: user.pincode,
+        district: user.district,
+        state: user.state,
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    // Log the error
+    console.error(error);
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
 
 module.exports=router;

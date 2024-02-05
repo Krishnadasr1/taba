@@ -24,13 +24,9 @@ const aboutSchema = new mongoose.Schema({
     }
     
   },
-  // img: {
-  //   name: String,
-  //   contentType: String,
-  //   data: Buffer
-  // },
   
-},{timestamps : true});
+  
+},{timestamps : false});
 
 const about = mongoose.model('about', aboutSchema);
 

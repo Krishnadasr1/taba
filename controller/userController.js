@@ -238,7 +238,7 @@ router.post('/get_by_regno', async (req, res) => {
      if (!regNo) {
       return res.status(400).json({ message: 'Missing regNo in request body' });
     }
-    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee ');
 
     const usersWithBase64Image = users.map(user => {
       return {
@@ -260,6 +260,7 @@ router.post('/get_by_regno', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
+        annualFee: user.annualFee,
         
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
@@ -505,6 +506,87 @@ function handleRegistrationError(error, res) {
 // });
 
 
+// router.post('/search_users', async (req, res) => {
+//   try {
+//     console.log("searching users");
+
+//     const { search, page } = req.body;
+//     const pageSize = 1000;
+    
+//     // Default page number to 1 if not provided
+//     const pageNumber = page || 1;
+
+//     console.log(`Listing users - Page: ${pageNumber}, PageSize: ${pageSize}`);
+
+
+//     if (!search) {
+//       return res.status(400).json({ message: 'Search input is required in the request body.' });
+//     }
+
+//     // Use a case-insensitive regular expression for the search query
+//     const query = new RegExp(search, 'i');
+
+//     // Calculate the skip value based on the page number
+//     const skip = (pageNumber - 1) * pageSize;
+
+//     // Search for users with matching firstName, lastName, phone, or regNo
+//     const users = await signup.find( 
+//       {
+//         $and: [
+//           {
+//             $or: [
+//               { firstName: query },
+//               { phone: query },
+//               { regNo: query },
+//               { DOB: query },
+//               { bloodGroup: query },
+//               { welfareMember: query },
+//             ],
+//           },
+//           { isRegisteredUser: true }, // Additional condition for registered users
+//         ],
+//       },
+//       'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state'
+//     )
+//       .skip(skip)
+//       .limit(pageSize);
+
+//     // Convert binary image data to Base64
+//     const usersWithBase64Image = users.map(user => {
+//       return {
+//         enrollmentDate: user.enrollmentDate,
+//         regNo: user.regNo,
+//         phone: user.phone,
+//         firstName: user.firstName,
+//         email: user.email,
+//         DOB: user.DOB,
+//         whatsAppno: user.whatsAppno,
+//         officeAddress: user.officeAddress,
+//         clerkName1: user.clerkName1,
+//         clerkName2: user.clerkName2,
+//         clerkPhone1: user.clerkPhone1,
+//         clerkPhone2: user.clerkPhone2,
+//         bloodGroup: user.bloodGroup,
+//         welfareMember: user.welfareMember,
+//         address: user.address,
+//         pincode: user.pincode,
+//         district: user.district,
+//         state: user.state,
+//         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+//       };
+//     });
+
+//     // Respond with the array of user data including Base64 image
+//     res.status(200).json(usersWithBase64Image);
+//   } catch (error) {
+//     // Log the error
+//     console.error(error);
+
+//     // Respond with a 500 Internal Server Error
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// });
+
 router.post('/search_users', async (req, res) => {
   try {
     console.log("searching users");
@@ -517,27 +599,34 @@ router.post('/search_users', async (req, res) => {
 
     console.log(`Listing users - Page: ${pageNumber}, PageSize: ${pageSize}`);
 
-
     if (!search) {
       return res.status(400).json({ message: 'Search input is required in the request body.' });
     }
 
-    // Use a case-insensitive regular expression for the search query
-    const query = new RegExp(search, 'i');
+    // Escape special characters in the search query
+    const escapedSearch = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+    // Use a case-insensitive regular expression for the escaped search query
+    const query = new RegExp(escapedSearch, 'i');
 
     // Calculate the skip value based on the page number
     const skip = (pageNumber - 1) * pageSize;
 
     // Search for users with matching firstName, lastName, phone, or regNo
-    const users = await signup.find(
+    const users = await signup.find( 
       {
-        $or: [
-          { firstName: query },
-          { phone: query },
-          { regNo: query },
-          { DOB: query },
-          { bloodGroup: query },
-          { welfareMember: query },
+        $and: [
+          {
+            $or: [
+              { firstName: query },
+              { phone: query },
+              { regNo: query },
+              { DOB: query },
+              { bloodGroup: query },
+              { welfareMember: query },
+            ],
+          },
+          { isRegisteredUser: true }, // Additional condition for registered users
         ],
       },
       'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state'
@@ -580,7 +669,6 @@ router.post('/search_users', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
-
 
 
 router.post('/request-reset',async(req,res)=>{
@@ -648,38 +736,6 @@ router.get('/download/:id', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
-router.get('/check-fields/:regNo', async (req, res) => {
-  try {
-    const regNo = req.params.regNo;
-    const user = await signup.findOne({ regNo });
-
-    if (!user) {
-      // User not found
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check if every non-empty field contains data
-    const nonEmptyFields = Object.keys(user._doc).filter((field) => {
-      return (
-        field !== '_id' &&
-        field !== '__v' &&
-        (user[field] !== undefined && user[field] !== null && (user[field] !== '' || field === 'annualFee' || field === 'whatsAppno'))
-      );
-    });
-
-    if (nonEmptyFields.length === Object.keys(signup.schema.obj).length) {
-      // Every non-empty field has data
-      return res.status(200).json({ message: 'Successful' });
-    } else {
-      // Some fields do not have data
-      return res.status(400).json({ message: 'Some fields do not have data' });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
