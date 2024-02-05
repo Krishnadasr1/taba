@@ -42,14 +42,15 @@ router.post('/login', async (req, res) => {
 router.get('/list-new-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:false}, 'regNo phone image Name email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:false}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
+        _id: user._id,
         regNo: user.regNo,
         phone: user.phone,
-        Name: user.Name,
+        firstName: user.firstName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -83,14 +84,14 @@ router.get('/list-new-users', async (req, res) => {
 router.get('/list-valid-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image Name email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:true}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
         regNo: user.regNo,
         phone: user.phone,
-        Name: user.Name,
+        firstName: user.firstName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -216,6 +217,76 @@ router.post('/upload', (req, res) => {
       }
     }
   });
+});
+
+const cron = require('node-cron');
+// 0 0 1 * * -once a month
+// */5 * * * * * -every 5 second
+
+// cron.schedule('*/5 * * * * *', async () => {
+//   try {
+//     const users = await signup.find({});
+
+//     users.forEach(async (user) => {
+//       const enrollmentDateParts = user.enrollmentDate.split('/'); // Assuming date is in the format DD/MM/YYYY
+//       const enrollmentDate = new Date(`${enrollmentDateParts[2]}-${enrollmentDateParts[1]}-${enrollmentDateParts[0]}`);
+      
+//       const currentDate = new Date();
+//       const experienceYears = Math.floor((currentDate - enrollmentDate) / (365 * 24 * 60 * 60 * 1000));
+
+//       let monthlyIncrement = 0;
+
+//       if (experienceYears >= 1 && experienceYears <= 5) {
+//         monthlyIncrement = 25;
+//       } else if (experienceYears >= 6 && experienceYears <= 15) {
+//         monthlyIncrement = 50;
+//       } else if (experienceYears >= 16 && experienceYears <= 50) {
+//         monthlyIncrement = 100;
+//       }
+
+//       const currentAnnualFee = parseInt(user.annualFee) || 0; // Ensure a valid number, default to 0 if NaN
+//       const updatedAnnualFee = currentAnnualFee + monthlyIncrement;
+
+//       if (!isNaN(updatedAnnualFee)) {
+//         // Update the annualFee as a string
+//         await signup.findByIdAndUpdate(user._id, { $set: { annualFee: updatedAnnualFee.toString() } });
+//       } else {
+//         console.error(`Invalid updatedAnnualFee for user with ID ${user._id}: ${updatedAnnualFee}`);
+//       }
+//     });
+
+//     console.log('Annual fees updated successfully.');
+//   } catch (error) {
+//     console.error('Error updating annual fees:', error);
+//   }
+// });
+
+// console.log('Cron job scheduled to run every 5 seconds.');
+
+router.post('/updatePayment/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { paymentAmount } = req.body;
+
+    // Fetch the user from the database
+    const user = await signup.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update paidAmount and subtract from annualFee
+    user.paidAmount = String(parseFloat(user.paidAmount) + parseFloat(paymentAmount));
+    user.annualFee = String(parseFloat(user.annualFee) - parseFloat(paymentAmount));
+
+    // Save the updated user
+    await user.save();
+
+    res.status(200).json({ message: 'Payment updated successfully',  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 module.exports=router;

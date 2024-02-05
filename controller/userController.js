@@ -35,11 +35,11 @@ router.post('/upload', (req, res) => {
       const {regNo,phone,password,enrollmentDate,firstName,email,DOB,whatsAppno,address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember,pincode,state,district} = req.body;
 
       // Check if the user already exists with the given phone
-      // const existingUser = await signup.findOne({ phone });
+      const existingUser = await signup.findOne({ phone });
 
-      // if (existingUser) {
-      //   return res.status(400).json({ message: 'User already exists' });
-      // }
+      if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' });
+      }
 
       // Generate a salt to use for password hashing
       const saltRounds = 10;
@@ -160,7 +160,7 @@ router.post('/list_users', async (req, res) => {
 
     const users = await signup
       .find({ isRegisteredUser:true })
-      .select('regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .select('regNo phone  firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
       .skip(skip)
       .limit(pageSize);
 
@@ -185,7 +185,7 @@ router.post('/list_users', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
-        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+        // image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
 
@@ -199,6 +199,38 @@ router.post('/list_users', async (req, res) => {
   }
 });
 
+router.post('/list_image', async (req, res) => {
+  try {
+    const page = parseInt(req.body.page) || 1;
+    const pageSize = 10;
+
+    console.log(`Listing users - Page: ${page}, PageSize: ${pageSize}`);
+
+    const skip = (page - 1) * pageSize;
+
+    const users = await signup
+      .find({ isRegisteredUser:true })
+      .select('image')
+      .skip(skip)
+      .limit(pageSize);
+
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 router.post('/get_by_regno', async (req, res) => {
   try {
@@ -241,6 +273,52 @@ router.post('/get_by_regno', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+router.post('/get_due', async (req, res) => {
+  try {
+     const {regNo} = req.body;
+     if (!regNo) {
+      return res.status(400).json({ message: 'Missing regNo in request body' });
+    }
+    const users = await signup.find({regNo}, 'annualFee');
+
+    const usersWithBase64Image = users.map(user => {
+      return {
+        annualFee: user.annualFee
+      };
+    });
+
+    
+   return res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// router.post('/get_image', async (req, res) => {
+//   try {
+//     const { regNos } = req.body;
+
+//     if (!regNos || !Array.isArray(regNos) || regNos.length === 0) {
+//       return res.status(400).json({ message: 'Missing or invalid regNos in request body' });
+//     }
+
+//     const users = await signup.find({ regNo: { $in: regNos } }, 'regNo  image ');
+
+//     const usersWithBase64Image = users.map(user => {
+//       return {
+//         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+//       };
+//     });
+
+//     return res.status(200).json(usersWithBase64Image);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// });
 
 
 router.put('/update/:userId', upload.single('image'), async (req, res) => {
@@ -432,7 +510,7 @@ router.post('/search_users', async (req, res) => {
     console.log("searching users");
 
     const { search, page } = req.body;
-    const pageSize = 10;
+    const pageSize = 1000;
     
     // Default page number to 1 if not provided
     const pageNumber = page || 1;
@@ -603,6 +681,12 @@ router.get('/check-fields/:regNo', async (req, res) => {
     console.error(error);
     return res.status(500).json({ message: 'Internal server error' });
   }
+});
+
+
+router.get('/show',async(req,res)=>{
+
+  res.status(200).json({message:"success"})
 });
 
 module.exports = router;

@@ -109,15 +109,15 @@ const signupSchema = new mongoose.Schema({
 
     data:{
       type :Buffer,
-      required : true,
+      
     },
     contentType:{
       type :String,
-      required: true,
+      
     },
     name: {
       type :String,
-    required: true,
+    
     }
     
   },
@@ -138,6 +138,11 @@ const signupSchema = new mongoose.Schema({
     default:false
   
   },
+
+  paidAmount: {
+    type: String,
+    default:"0"
+  }
 },{timestamps : true});
 
 const signup = mongoose.model('signup', signupSchema);
