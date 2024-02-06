@@ -108,6 +108,8 @@ router.get('/list-valid-users', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
+        annualFee:user.annualFee,
+        paidAmount:user.paidAmount,
         
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
@@ -237,7 +239,7 @@ router.put('/update-about/:userId', upload.single('image'), async (req, res) => 
     console.log("..........update...........");
     const userId = req.params.userId;
     const { name,description  } = req.body;
-
+    console.log(name,description)
     const user = await about.findById(userId);
 
     if (!user) {
@@ -268,6 +270,19 @@ router.put('/update-about/:userId', upload.single('image'), async (req, res) => 
     handleRegistrationError(error, res);
   }
 });
+
+function handleRegistrationError(error, res) {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File size limit exceeded (50 KB max)' });
+    } else {
+      return res.status(400).json({ message: 'Invalid file' });
+    }
+  } else {
+    console.error("...........error...................", error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
 
 const cron = require('node-cron');
 // 0 0 1 * * -once a month

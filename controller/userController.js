@@ -217,7 +217,8 @@ router.post('/list_image', async (req, res) => {
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
-        
+        _id:user._id,
+        regNo:user.regNo,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });

@@ -19,7 +19,7 @@ admin.initializeApp({
 });
 
 
-const registrationToken = 'YOUR_DEVICE_REGISTRATION_TOKEN';
+const registrationToken = 'ddjrn1H_QxqlhYtBGu7C9Z:APA91bGwulNcziSrtvj7t0JDiuQLsWARFqHrdbbl_RMFT6RqMgU6CLn4wcLFwaVv7OyrTyQC0iF63W3-CyezxpUN5haDfHDXt5zZ4FDKP_2-sJMa7kyH6RHbeL87cnQHJ6DKnZ-gmhB0';
 
 
 //////////////////////
@@ -51,7 +51,7 @@ router.post('/register-device', async(req, res) => {
  
 
 router.post('/send-notification', (req, res) => {
-    const { title, body } = req.body;
+    const {registrationToken, title, body } = req.body;
   
     // Construct the FCM message
     const message = {
@@ -69,7 +69,7 @@ router.post('/send-notification', (req, res) => {
         res.send('Notification sent successfully');
       })
       .catch((error) => {
-        console.error('Error sending message:', error);x
+        console.error('Error sending message:', error);
         res.status(500).send('Error sending notification');
       });
   });
