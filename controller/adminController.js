@@ -84,7 +84,7 @@ router.get('/list-new-users', async (req, res) => {
 router.get('/list-valid-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:true}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    const users = await signup.find({isRegisteredUser:true}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
@@ -225,14 +225,14 @@ router.post('/upload', (req, res) => {
 router.get('/about', async (req, res) => {
   try {
     console.log("listing")
-    const users = await about.find({}, 'image name description');
+    const users = await about.find({}, 'image name description _id');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
         name:user.name,
         description:user.description,
-
+        _id:user._id,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });

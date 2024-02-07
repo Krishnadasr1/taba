@@ -201,34 +201,25 @@ router.post('/list_users', async (req, res) => {
 
 router.post('/list_image', async (req, res) => {
   try {
-    const page = parseInt(req.body.page) || 1;
-    const pageSize = 10;
+     const {regNo} = req.body;
+     if (!regNo) {
+      return res.status(400).json({ message: 'Missing regNo in request body' });
+    }
+    const users = await signup.find({regNo}, 'image  ');
 
-    console.log(`Listing users - Page: ${page}, PageSize: ${pageSize}`);
-
-    const skip = (page - 1) * pageSize;
-
-    const users = await signup
-      .find({ isRegisteredUser:true })
-      .select('image')
-      .skip(skip)
-      .limit(pageSize);
-
-    // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
-        _id:user._id,
-        regNo:user.regNo,
+        
+        
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
 
-    // Respond with the array of user data including Base64 image
-    res.status(200).json(usersWithBase64Image);
+    
+   return res.status(200).json(usersWithBase64Image);
   } catch (error) {
     console.log(error);
 
-    // Respond with a 500 Internal Server Error
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
