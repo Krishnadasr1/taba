@@ -222,15 +222,28 @@ router.post('/upload', (req, res) => {
   });
 });
 
-router.get('/about',async(req,res)=>{
-  try{
-    const About = await about.find();
+router.get('/about', async (req, res) => {
+  try {
+    console.log("listing")
+    const users = await about.find({}, 'image name description');
 
-    res.status(200).json({message:"success",About})
-  }
-  catch(error){
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        name:user.name,
+        description:user.description,
+
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message:"internal error"})
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

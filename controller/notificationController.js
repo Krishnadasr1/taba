@@ -19,7 +19,7 @@ admin.initializeApp({
 });
 
 
-const registrationToken = 'ddjrn1H_QxqlhYtBGu7C9Z:APA91bGwulNcziSrtvj7t0JDiuQLsWARFqHrdbbl_RMFT6RqMgU6CLn4wcLFwaVv7OyrTyQC0iF63W3-CyezxpUN5haDfHDXt5zZ4FDKP_2-sJMa7kyH6RHbeL87cnQHJ6DKnZ-gmhB0';
+// const registrationToken = 'ddjrn1H_QxqlhYtBGu7C9Z:APA91bGwulNcziSrtvj7t0JDiuQLsWARFqHrdbbl_RMFT6RqMgU6CLn4wcLFwaVv7OyrTyQC0iF63W3-CyezxpUN5haDfHDXt5zZ4FDKP_2-sJMa7kyH6RHbeL87cnQHJ6DKnZ-gmhB0';
 
 
 //////////////////////
@@ -28,7 +28,7 @@ router.post('/register-device', async(req, res) => {
     
   try{
     const { token,regNo } = req.body;
-    const user = await signup.find(regNo)
+    const user = await signup.findOne({regNo})
     if(!user){
         return res.status(404).json({message:'user not found'})
     }
@@ -45,24 +45,26 @@ router.post('/register-device', async(req, res) => {
         console.log(error)
         return res.status(500).json({message:"internal server error"})
     }
-  })
+  });
 
   
  
 
-router.post('/send-notification', (req, res) => {
-    const {registrationToken, title, body } = req.body;
+  router.post('/send-notification', (req, res) => {
+    const { registrationToken, title, body } = req.body;
   
-    // Construct the FCM message
+    if (!registrationToken) {
+      return res.status(400).send('Registration token is required');
+    }
+  
     const message = {
       notification: {
         title,
         body,
       },
-      tokens: registrationToken, // Use the stored tokens for targeted notifications
+      token: registrationToken,
     };
   
-    // Send the FCM message
     admin.messaging().send(message)
       .then((response) => {
         console.log('Successfully sent message:', response);
