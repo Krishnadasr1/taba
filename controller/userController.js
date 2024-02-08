@@ -160,7 +160,7 @@ router.post('/list_users', async (req, res) => {
 
     const users = await signup
       .find({ isRegisteredUser:true })
-      .select('regNo phone  firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .select('regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
       .skip(skip)
       .limit(pageSize);
 
@@ -185,7 +185,7 @@ router.post('/list_users', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
-        // image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
 
