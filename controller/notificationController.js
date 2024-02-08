@@ -13,39 +13,40 @@ const admin = require('firebase-admin');
 const notification = require('../model/notification');
 const serviceAccount = require('../config/push-notification.json');
 const broadcast = require('../model/broadcast');
-
+const Token = require('../model/token');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
 
-// const registrationToken = 'ddjrn1H_QxqlhYtBGu7C9Z:APA91bGwulNcziSrtvj7t0JDiuQLsWARFqHrdbbl_RMFT6RqMgU6CLn4wcLFwaVv7OyrTyQC0iF63W3-CyezxpUN5haDfHDXt5zZ4FDKP_2-sJMa7kyH6RHbeL87cnQHJ6DKnZ-gmhB0';
-
-
 //////////////////////
 
-router.post('/register-device', async(req, res) => {
-    
-  try{
-    const { token,regNo } = req.body;
-    const user = await signup.findOne({regNo})
-    if(!user){
-        return res.status(404).json({message:'user not found'})
-    }
-    user.regNo = regNo || user.regNo,
-    user.token = token || user.token
-  
+router.post('/register-device', async (req, res) => {
+  try {
+    const { token, regNo } = req.body;
 
-  await user.save();
+    let existingToken = await Token.findOne({ regNo });
+
+    if (existingToken) {
+      
+      existingToken.token = token || existingToken.token;
+    } else {
+      
+      existingToken = new Token({
+        regNo,
+        token,
+      });
+    }
+
+    await existingToken.save();
 
     console.log(`Received registration token: ${token}`);
-    res.status(200).json('Token received successfully');}
-
-    catch(error){
-        console.log(error)
-        return res.status(500).json({message:"internal server error"})
-    }
-  });
+    res.status(200).json('Token received successfully');
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
   
  
@@ -114,57 +115,64 @@ router.post('/send-notification', (req, res) => {
         console.error('Error sending or saving notification:', error);
         res.status(500).send('Error sending or saving notification');
       });
-  });
+});
+
+  
+
+
 
 router.post('/send-broadcast-notification', (req, res) => {
     // Fetch all registration tokens from the signup model
-    signup.find({}, 'token', (err, users) => {
-      if (err) {
-        console.error('Error fetching registration tokens:', err);
-        return res.status(500).send('Error fetching registration tokens');
-      }
+    Token.find({}, 'token')
+      .then(users => {
+        // Extract registration tokens from users
+        const registrationTokens = users.map(user => user.token);
+        console.log(registrationTokens)
   
-      // Extract registration tokens from users
-      const registrationTokens = users.map(user => user.token);
+        // Check if there are tokens available
+        if (registrationTokens.length === 0) {
+          return res.status(400).send('No registration tokens found');
+        }
   
-      // Check if there are tokens available
-      if (registrationTokens.length === 0) {
-        return res.status(400).send('No registration tokens found');
-      }
-  
-      // Construct the message
-      const { title, body } = req.body;
-      const message = {
-        notification: {
-          title,
-          body,
-        },
-        tokens: registrationTokens,
-      };
-  
-      // Send the broadcast message
-      admin.messaging().sendMulticast(message)
-        .then((response) => {
-          console.log('Successfully sent broadcast message:', response);
-  
-          // Save the broadcast message to the database
-          const newBroadcast = new broadcast({
+        // Construct the message
+        const { title, body } = req.body;
+        const message = {
+          notification: {
             title,
             body,
-          });
+          },
+          tokens: registrationTokens, // Use registrationTokens instead of tokens
+        };
   
-          return newBroadcast.save();
-        })
-        .then(() => {
-          console.log('Broadcast message saved to the database');
-          res.send('Broadcast message sent and saved successfully');
-        })
-        .catch((error) => {
-          console.error('Error sending or saving broadcast message:', error);
-          res.status(500).send('Error sending or saving broadcast message');
+        // Send the broadcast message
+        return admin.messaging().sendMulticast(message);
+      })
+      .then(response => {
+        console.log('Successfully sent broadcast message:', response);
+  
+        // Save the broadcast message to the database
+        const { title, body } = req.body;
+        const newBroadcast = new broadcast({
+          title,
+          body,
         });
-    });
-  });
+  
+        return newBroadcast.save();
+      })
+      .then(() => {
+        console.log('Broadcast message saved to the database');
+        res.send('Broadcast message sent and saved successfully');
+      })
+      .catch(error => {
+        console.error('Error sending or saving broadcast message:', error);
+        res.status(500).send('Error sending or saving broadcast message');
+      });
+});
+  
+  
+  
+  
+  
   
   
 
