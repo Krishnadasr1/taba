@@ -14,6 +14,7 @@ const notification = require('../model/notification');
 const serviceAccount = require('../config/push-notification.json');
 const broadcast = require('../model/broadcast');
 const Token = require('../model/token');
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -176,16 +177,13 @@ router.post('/get-message', async (req, res) => {
       const regNo = req.body.regNo;
 
       
-      const notificationData = await notification.find({ regNo });
+      const notificationData = await notification.find({ regNo },'_id title body');
 
       const broadcastData = await broadcast.find();
 
-      const result = {
-          notificationData,
-          broadcastData
-      };
+      const combinedResult = [...notificationData, ...broadcastData];
 
-      res.status(200).json(result);
+      res.status(200).json(combinedResult);
   } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
