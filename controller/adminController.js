@@ -10,6 +10,7 @@ const { MongoClient } = require('mongodb');
 const axios = require('axios');
 const verifyToken = require('../verifyToken');
 const about = require('../model/about');
+const Token = require('../model/token');
 
 
 router.post('/login', async (req, res) => {
@@ -81,14 +82,63 @@ router.get('/list-new-users', async (req, res) => {
   }
 });
 
+// router.get('/list-valid-users', async (req, res) => {
+//   try {
+//     console.log("listing users")
+//     const users = await signup.find({isRegisteredUser:true}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
+
+//     // Convert binary image data to Base64
+//     const usersWithBase64Image = users.map(user => {
+//       return {
+//         _id: user._id,
+//         regNo: user.regNo,
+//         phone: user.phone,
+//         firstName: user.firstName,
+//         email: user.email,
+//         DOB: user.DOB,
+//         address: user.address,
+//         officeAddress: user.officeAddress,
+//         clerkName1: user.clerkName1,
+//         clerkName2: user.clerkName2,
+//         clerkPhone1: user.clerkPhone1,
+//         clerkPhone2: user.clerkPhone2,
+//         bloodGroup: user.bloodGroup,
+//         welfareMember: user.welfareMember,
+//         enrollmentDate: user.enrollmentDate,
+//         pincode: user.pincode,
+//         district: user.district,
+//         state: user.state,
+//         whatsAppno: user.whatsAppno,
+//         annualFee:user.annualFee,
+//         paidAmount:user.paidAmount,
+        
+//         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+//       };
+//     });
+
+//     // Respond with the array of user data including Base64 image
+//     res.status(200).json(usersWithBase64Image);
+//   } catch (error) {
+//     console.log(error);
+
+//     // Respond with a 500 Internal Server Error
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// });
+
 router.get('/list-valid-users', async (req, res) => {
   try {
     console.log("listing users")
-    const users = await signup.find({isRegisteredUser:true}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
+    const users = await signup.find({ isRegisteredUser: true }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
 
     // Convert binary image data to Base64
-    const usersWithBase64Image = users.map(user => {
-      return {
+    const usersWithBase64Image = [];
+
+    for (const user of users) {
+      // Fetch data from Token model based on regNo
+      const tokenData = await Token.findOne({ regNo: user.regNo }, 'regNo token');
+
+      usersWithBase64Image.push({
         _id: user._id,
         regNo: user.regNo,
         phone: user.phone,
@@ -108,14 +158,14 @@ router.get('/list-valid-users', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
-        annualFee:user.annualFee,
-        paidAmount:user.paidAmount,
-        
+        annualFee: user.annualFee,
+        paidAmount: user.paidAmount,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
-      };
-    });
+        token: tokenData ? tokenData.token : null,
+      });
+    }
 
-    // Respond with the array of user data including Base64 image
+    // Respond with the array of user data including Base64 image and Token
     res.status(200).json(usersWithBase64Image);
   } catch (error) {
     console.log(error);
@@ -124,6 +174,8 @@ router.get('/list-valid-users', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+
 
 router.delete('/delete/:userId', async (req, res) => {
   const regNoToDelete = req.params.userId;

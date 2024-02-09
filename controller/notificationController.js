@@ -170,10 +170,48 @@ router.post('/send-broadcast-notification', (req, res) => {
 });
   
   
-  
-  
-  
-  
+
+router.post('/get-message', async (req, res) => {
+  try {
+      const regNo = req.body.regNo;
+
+      
+      const notificationData = await notification.find({ regNo });
+
+      const broadcastData = await broadcast.find();
+
+      const result = {
+          notificationData,
+          broadcastData
+      };
+
+      res.status(200).json(result);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+router.post('/get-message-count', async (req, res) => {
+  try {
+      const regNo = req.body.regNo;
+
+      // Get count of records from the notification model based on regNo
+      const notificationCount = await notification.countDocuments({ regNo });
+
+      // Get total count of records from the broadcast model
+      const broadcastCount = await broadcast.countDocuments();
+
+      // Calculate the total count
+      const totalCount = notificationCount + broadcastCount;
+
+      res.status(200).json({ totalCount });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
   
 
   module.exports=router;
