@@ -352,6 +352,7 @@ function handleRegistrationError(error, res) {
 const cron = require('node-cron');
 // 0 0 1 * * -once a month
 // */5 * * * * * -every 5 second
+// 0 0 * * * -everyday
 
 // cron.schedule('*/5 * * * * *', async () => {
 //   try {
@@ -392,6 +393,53 @@ const cron = require('node-cron');
 // });
 
 // console.log('Cron job scheduled to run every 5 seconds.');
+
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const users = await signup.find({});
+
+    const currentDate = new Date();
+    const currentDay = currentDate.getDate();
+
+    users.forEach(async (user) => {
+      const enrollmentDateParts = user.enrollmentDate.split('/');
+      const enrollmentDay = parseInt(enrollmentDateParts[0]);
+
+      // Check if today is the enrollment day of the user
+      if (currentDay === enrollmentDay) {
+        let monthlyIncrement = 0;
+
+        const experienceYears = Math.floor((currentDate - new Date(`${enrollmentDateParts[2]}-${enrollmentDateParts[1]}-${enrollmentDateParts[0]}`)) / (365 * 24 * 60 * 60 * 1000));
+
+        if (experienceYears >= 1 && experienceYears <= 5) {
+          monthlyIncrement = 25;
+        } else if (experienceYears >= 6 && experienceYears <= 15) {
+          monthlyIncrement = 50;
+        } else if (experienceYears >= 16 && experienceYears <= 50) {
+          monthlyIncrement = 100;
+        }
+
+        const currentAnnualFee = parseInt(user.annualFee) || 0;
+        const updatedAnnualFee = currentAnnualFee + monthlyIncrement;
+
+        if (!isNaN(updatedAnnualFee)) {
+          // Update the annualFee as a string
+          await signup.findByIdAndUpdate(user._id, { $set: { annualFee: updatedAnnualFee.toString() } });
+        } else {
+          console.error(`Invalid updatedAnnualFee for user with ID ${user._id}: ${updatedAnnualFee}`);
+        }
+      }
+    });
+
+    console.log('Daily check completed successfully.');
+  } catch (error) {
+    console.error('Error during daily check:', error);
+  }
+});
+
+console.log('Cron job scheduled to run daily.');
+
 
 router.post('/updatePayment/:userId', async (req, res) => {
   try {
@@ -582,7 +630,7 @@ router.post('/search_users', async (req, res) => {
           { isRegisteredUser: true }, // Additional condition for registered users
         ],
       },
-      'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state'
+      'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee'
     )
       .skip(skip)
       .limit(pageSize);
@@ -608,6 +656,8 @@ router.post('/search_users', async (req, res) => {
         pincode: user.pincode,
         district: user.district,
         state: user.state,
+        paidAmount: user.paidAmount,
+        annualFee: user.annualFee,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
@@ -619,6 +669,73 @@ router.post('/search_users', async (req, res) => {
     console.error(error);
 
     // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.post('/get_by_regno', async (req, res) => {
+  try {
+     const {regNo} = req.body;
+     if (!regNo) {
+      return res.status(400).json({ message: 'Missing regNo in request body' });
+    }
+    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee ');
+
+    const usersWithBase64Image = users.map(user => {
+      return {
+        regNo: user.regNo,
+        phone: user.phone,
+        firstName: user.firstName,
+        email: user.email,
+        DOB: user.DOB,
+        address: user.address,
+        officeAddress: user.officeAddress,
+        clerkName1: user.clerkName1,
+        clerkName2: user.clerkName2,
+        clerkPhone1: user.clerkPhone1,
+        clerkPhone2: user.clerkPhone2,
+        bloodGroup: user.bloodGroup,
+        welfareMember: user.welfareMember,
+        enrollmentDate: user.enrollmentDate,
+        pincode: user.pincode,
+        district: user.district,
+        state: user.state,
+        whatsAppno: user.whatsAppno,
+        annualFee: user.annualFee,
+        
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    
+   return res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.post('/get_token', async (req, res) => {
+  try {
+     const {regNo} = req.body;
+     if (!regNo) {
+      return res.status(400).json({ message: 'Missing regNo in request body' });
+    }
+    const users = await Token.find({regNo}, 'regNo token ');
+
+    const usersWithBase64Image = users.map(user => {
+      return {
+        regNo: user.regNo,
+        token: user.token
+      };
+    });
+
+    
+   return res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
