@@ -11,6 +11,8 @@ const axios = require('axios');
 const verifyToken = require('../verifyToken');
 const about = require('../model/about');
 const Token = require('../model/token');
+const nodemailer = require('nodemailer');
+const generatePassword = require('generate-password');
 
 
 router.post('/login', async (req, res) => {
@@ -367,7 +369,7 @@ const cron = require('node-cron');
 
 //       let monthlyIncrement = 0;
 
-//       if (experienceYears >= 1 && experienceYears <= 5) {
+//       if (experienceYears >= 0 && experienceYears <= 5) {
 //         monthlyIncrement = 25;
 //       } else if (experienceYears >= 6 && experienceYears <= 15) {
 //         monthlyIncrement = 50;
@@ -394,33 +396,30 @@ const cron = require('node-cron');
 
 // console.log('Cron job scheduled to run every 5 seconds.');
 
-
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('0 0 1 * *', async () => {
   try {
     const users = await signup.find({});
 
-    const currentDate = new Date();
-    const currentDay = currentDate.getDate();
-
     users.forEach(async (user) => {
-      const enrollmentDateParts = user.enrollmentDate.split('/');
-      const enrollmentDay = parseInt(enrollmentDateParts[0]);
+      const enrollmentDateParts = user.enrollmentDate.split('/'); // Assuming date is in the format DD/MM/YYYY
+      const enrollmentDate = new Date(`${enrollmentDateParts[2]}-${enrollmentDateParts[1]}-${enrollmentDateParts[0]}`);
+      
+      const currentDate = new Date();
+      const experienceYears = Math.floor((currentDate - enrollmentDate) / (365 * 24 * 60 * 60 * 1000));
 
-      // Check if today is the enrollment day of the user
-      if (currentDay === enrollmentDay) {
-        let monthlyIncrement = 0;
+      let monthlyIncrement = 0;
 
-        const experienceYears = Math.floor((currentDate - new Date(`${enrollmentDateParts[2]}-${enrollmentDateParts[1]}-${enrollmentDateParts[0]}`)) / (365 * 24 * 60 * 60 * 1000));
+      if (experienceYears >= 0 && experienceYears <= 5) {
+        monthlyIncrement = 25;
+      } else if (experienceYears >= 6 && experienceYears <= 15) {
+        monthlyIncrement = 50;
+      } else if (experienceYears >= 16 && experienceYears <= 50) {
+        monthlyIncrement = 100;
+      }
 
-        if (experienceYears >= 1 && experienceYears <= 5) {
-          monthlyIncrement = 25;
-        } else if (experienceYears >= 6 && experienceYears <= 15) {
-          monthlyIncrement = 50;
-        } else if (experienceYears >= 16 && experienceYears <= 50) {
-          monthlyIncrement = 100;
-        }
-
-        const currentAnnualFee = parseInt(user.annualFee) || 0;
+      // Check if user.annualFee is a valid number string
+      if (!isNaN(user.annualFee)) {
+        const currentAnnualFee = parseInt(user.annualFee) || 0; // Ensure a valid number, default to 0 if NaN
         const updatedAnnualFee = currentAnnualFee + monthlyIncrement;
 
         if (!isNaN(updatedAnnualFee)) {
@@ -429,16 +428,18 @@ cron.schedule('0 0 * * *', async () => {
         } else {
           console.error(`Invalid updatedAnnualFee for user with ID ${user._id}: ${updatedAnnualFee}`);
         }
+      } else {
+        console.error(`Invalid annualFee for user with ID ${user._id}: ${user.annualFee}`);
       }
     });
 
-    console.log('Daily check completed successfully.');
+    console.log('Annual fees updated successfully.');
   } catch (error) {
-    console.error('Error during daily check:', error);
+    console.error('Error updating annual fees:', error);
   }
 });
 
-console.log('Cron job scheduled to run daily.');
+console.log('Cron job scheduled to run every 5 seconds.');
 
 
 router.post('/updatePayment/:userId', async (req, res) => {
@@ -630,7 +631,7 @@ router.post('/search_users', async (req, res) => {
           { isRegisteredUser: true }, // Additional condition for registered users
         ],
       },
-      'regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee'
+      '_id regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee'
     )
       .skip(skip)
       .limit(pageSize);
@@ -638,6 +639,7 @@ router.post('/search_users', async (req, res) => {
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
       return {
+        _id: user._id,
         enrollmentDate: user.enrollmentDate,
         regNo: user.regNo,
         phone: user.phone,
@@ -739,6 +741,89 @@ router.post('/get_token', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+router.put('/update-fee/:userId',async (req, res) => {
+  try {
+    console.log("..........update...........");
+    const userId = req.params.userId;
+    const { annualFee } = req.body;
+
+    // Find the user by ID
+    const user = await signup.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user fields
+    user.annualFee = annualFee || user.annualFee;
+    
+
+    // Save the updated user to the database
+    await user.save();
+
+    res.status(200).json({ message: 'Fee updated successfully' });
+  } catch (error) {
+    handleRegistrationError(error, res);
+  }
+});
+
+router.post('/send-email', async (req, res) => {
+  try {
+    // Generate a random eight-character password
+    const newPassword = generatePassword.generate({
+      length: 8,
+      numbers: false,
+      symbols: false,
+      uppercase: true,
+      lowercase: true,
+    });
+
+    const to = `krishnadasr2001@gmail.com` ;
+
+    // Hash the generated password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Create a Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.forwardemail.net',
+      port: 465,
+      secure: true,
+      service: 'gmail',
+      auth: {
+        user: 'thealappuzhabarassociation@gmail.com',
+        pass: 'qabl ivam qntl zksx',
+      },
+    });
+
+    // Define email options
+    const mailOptions = {
+      from: 'thealappuzhabarassociation@gmail.com',
+      to,
+      subject: 'Admin Password reset',
+      text: `Your password has been reset. Your new password is: ${newPassword}`,
+      html: ``,
+    };
+
+    // Update the hashed password in the admin model
+    await admin.findOneAndUpdate({}, { password: hashedPassword });
+
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error:', error);
+        return res.status(500).json({ error: 'Failed to send email' });
+      } else {
+        console.log('Email sent:', info.response);
+        return res.status(200).json({ message: 'Email sent successfully' });
+      }
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 
 module.exports=router;
