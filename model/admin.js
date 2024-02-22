@@ -1,3 +1,4 @@
+const { text } = require('body-parser');
 const mongoose = require('mongoose');
 
 const adminSchema = new mongoose.Schema({
@@ -8,6 +9,10 @@ const adminSchema = new mongoose.Schema({
 
     password: {
         type: String,
+    },
+
+    email:{
+        type:String,
     },
 
     });

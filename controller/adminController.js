@@ -396,7 +396,7 @@ const cron = require('node-cron');
 
 // console.log('Cron job scheduled to run every 5 seconds.');
 
-cron.schedule('0 0 1 * *', async () => {
+cron.schedule('*/5 * * * * *', async () => {
   try {
     const users = await signup.find({});
 
@@ -421,6 +421,7 @@ cron.schedule('0 0 1 * *', async () => {
       if (!isNaN(user.annualFee)) {
         const currentAnnualFee = parseInt(user.annualFee) || 0; // Ensure a valid number, default to 0 if NaN
         const updatedAnnualFee = currentAnnualFee + monthlyIncrement;
+        // console.log(updatedAnnualFee)
 
         if (!isNaN(updatedAnnualFee)) {
           // Update the annualFee as a string
@@ -567,7 +568,7 @@ router.put('/invalid', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { userName, newPassword } = req.body;
-    const user = await signup.findOne({ userName });
+    const user = await admin.findOne({ userName });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -779,10 +780,18 @@ router.post('/send-email', async (req, res) => {
       lowercase: true,
     });
 
-    const to = `krishnadasr2001@gmail.com` ;
+    const to = req.body.to;
+
+    const Admin = await admin.findOne({ email: to });
+
+    if (!Admin) {
+      return res.status(404).json({ message: 'Admin not found for the provided email' });
+    }
 
     // Hash the generated password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await admin.findOneAndUpdate({ email: to }, { password: hashedPassword });
 
     // Create a Nodemailer transporter
     const transporter = nodemailer.createTransport({
@@ -802,11 +811,73 @@ router.post('/send-email', async (req, res) => {
       to,
       subject: 'Admin Password reset',
       text: `Your password has been reset. Your new password is: ${newPassword}`,
-      html: ``,
+      html: `<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Password Reset</title>
+      <style>
+        body {
+          font-family: 'Arial', sans-serif;
+          background-color: #f4f4f4;
+          color: #333;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+    
+        .container {
+          max-width: 400px;
+          background-color: #fff;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        h1 {
+          color: #3498db;
+          margin-bottom: 20px;
+        }
+    
+        p {
+          line-height: 1.6;
+        }
+    
+        .password {
+          font-size: 1.5em;
+          font-weight: bold;
+          color: #27ae60;
+          margin: 15px 0;
+          border: 2px solid #27ae60;
+          padding: 8px;
+          border-radius: 5px;
+          text-align: center;
+        }
+    
+        .footer {
+          margin-top: 20px;
+          text-align: center;
+          font-size: 12px;
+          color: #777;
+        }
+      </style>
+    </head>
+    
+    <body>
+      <div class="container">
+        <h1>Password Reset</h1>
+        <p>Your password has been reset. Here is your new password:</p>
+        <div class="password">${newPassword}</div>
+        <p>Please login with your new password.</p>
+        <div class="footer">
+        </div>
+      </div>
+    </body>`,
     };
 
     // Update the hashed password in the admin model
-    await admin.findOneAndUpdate({}, { password: hashedPassword });
 
     // Send the email
     transporter.sendMail(mailOptions, (error, info) => {

@@ -120,7 +120,11 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if(user.isRegisteredUser==false){
+    if(user.isValidUser=="false"){
+      return res.status(401).json({message:'please reset your password to continue'});
+    }
+
+    if(user.isRegisteredUser=="false"){
       return res.status(403).json({message: 'user not approved yet'});
     }
 
@@ -133,7 +137,7 @@ router.post('/login', async (req, res) => {
 
     // Generate a JWT token
     const token = jwt.sign({ userId: user._id }, 'your-secret-key', { expiresIn: '1h' });
-    return res.status(200).json({ message: 'login successful', token,
+    return res.status(200).json({ message: 'login successful',
     user:{
       regNo : user.regNo || "",
       _id : user._id
@@ -684,8 +688,8 @@ router.post('/request-reset',async(req,res)=>{
 
 router.post('/reset-password', async (req, res) => {
   try {
-    const { phone, newPassword } = req.body;
-    const user = await signup.findOne({ phone });
+    const { regNo, newPassword } = req.body;
+    const user = await signup.findOne({ regNo });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
