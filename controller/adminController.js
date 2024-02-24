@@ -44,8 +44,20 @@ router.post('/login', async (req, res) => {
 
 router.get('/list-new-users', async (req, res) => {
   try {
-    console.log("listing users")
-    const users = await signup.find({isRegisteredUser:false}, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate');
+    console.log("listing users");
+
+    // Extract page number from the request query, default to 1 if not provided
+    const page = parseInt(req.body.page, 10) || 1;
+    // Set the page size
+    const pageSize = 10000;
+    // Calculate the skip value based on the page number and page size
+    const skip = (page - 1) * pageSize;
+
+    // Fetch new users with pagination
+    const users = await signup
+      .find({ isRegisteredUser: false }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .skip(skip)
+      .limit(pageSize);
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
@@ -69,12 +81,11 @@ router.get('/list-new-users', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
-        
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
 
-    // Respond with the array of user data including Base64 image
+    // Respond with the array of new user data including Base64 image
     res.status(200).json(usersWithBase64Image);
   } catch (error) {
     console.log(error);
@@ -83,6 +94,7 @@ router.get('/list-new-users', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 // router.get('/list-valid-users', async (req, res) => {
 //   try {
@@ -130,8 +142,20 @@ router.get('/list-new-users', async (req, res) => {
 
 router.get('/list-valid-users', async (req, res) => {
   try {
-    console.log("listing users")
-    const users = await signup.find({ isRegisteredUser: true }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
+    console.log("listing users");
+
+    // Extract page number from the request query, default to 1 if not provided
+    const page = parseInt(req.body.page, 10) || 1;
+
+    const pageSize = 10000;
+    // Calculate the skip value based on the page number and page size
+    const skip = (page - 1) * pageSize;
+
+    // Fetch users with pagination
+    const users = await signup
+      .find({ isRegisteredUser: true }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount')
+      .skip(skip)
+      .limit(pageSize);
 
     // Convert binary image data to Base64
     const usersWithBase64Image = [];
@@ -176,6 +200,7 @@ router.get('/list-valid-users', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 
 
@@ -396,7 +421,7 @@ const cron = require('node-cron');
 
 // console.log('Cron job scheduled to run every 5 seconds.');
 
-cron.schedule('*/5 * * * * *', async () => {
+cron.schedule('0 0 1 * *', async () => {
   try {
     const users = await signup.find({});
 
