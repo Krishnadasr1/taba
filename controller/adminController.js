@@ -147,7 +147,7 @@ router.get('/list-valid-users', async (req, res) => {
     // Extract page number from the request query, default to 1 if not provided
     const page = parseInt(req.body.page, 10) || 1;
 
-    const pageSize = 10000;
+    const pageSize = 30;
     // Calculate the skip value based on the page number and page size
     const skip = (page - 1) * pageSize;
 
