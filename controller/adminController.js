@@ -253,11 +253,9 @@ const upload = multer({
     fileSize: 5000 * 1024, // 50 KB limit
   },
   fileFilter: function (req, file, cb) {
-    if (file.mimetype === 'image/jpeg') {
+    
       cb(null, true);
-    } else {
-      cb(new Error('Only JPEG images are allowed'), false)
-    }
+    
   },
 });
 router.post('/upload', (req, res) => {
