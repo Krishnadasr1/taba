@@ -497,7 +497,7 @@ router.post('/search_requests', async (req, res) => {
     console.log("searching users");
 
     const { search, page } = req.body;
-    const pageSize = 1000;
+    const pageSize = 10000;
     
     // Default page number to 1 if not provided
     const pageNumber = page || 1;
@@ -618,7 +618,7 @@ router.post('/search_users', async (req, res) => {
     console.log("searching users");
 
     const { search, page } = req.body;
-    const pageSize = 1000;
+    const pageSize = 10000;
     
     // Default page number to 1 if not provided
     const pageNumber = page || 1;
