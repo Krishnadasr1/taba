@@ -140,14 +140,15 @@ router.get('/list-new-users', async (req, res) => {
 //   }
 // });
 
-router.get('/list-valid-users', async (req, res) => {
+router.post('/list-valid-users', async (req, res) => {
   try {
     console.log("listing users");
 
     // Extract page number from the request query, default to 1 if not provided
     const page = parseInt(req.body.page, 10) || 1;
+    console.log(page)
 
-    const pageSize = 30;
+    const pageSize = 20;
     // Calculate the skip value based on the page number and page size
     const skip = (page - 1) * pageSize;
 
