@@ -120,19 +120,20 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+   
+    // Compare the provided password with the hashed password in the database
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
     if(user.isValidUser=="false"){
       return res.status(401).json({message:'please reset your password to continue'});
     }
 
     if(user.isRegisteredUser=="false"){
       return res.status(403).json({message: 'user not approved yet'});
-    }
-
-    // Compare the provided password with the hashed password in the database
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid password' });
     }
 
     // Generate a JWT token
