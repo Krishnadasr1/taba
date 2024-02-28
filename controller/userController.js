@@ -154,6 +154,28 @@ router.post('/login', async (req, res) => {
 });
 
 
+router.post('/check-user', async (req, res) => { 
+  try {
+    
+    const {regNo} = req.body;
+    
+    const user = await signup.findOne({ regNo });
+
+    if (!user) {
+      return res.status(404).json({ message: 'false' });
+    }
+    else{
+      return res.status(200).json({message:'true'});
+    }
+  }
+
+  catch(error){
+    console.log(error)
+    return res.status(500).json({message:"internal server error"})
+  }
+});
+
+
 router.post('/list_users', async (req, res) => {
   try {
     const page = parseInt(req.body.page) || 1;
