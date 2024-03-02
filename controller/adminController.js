@@ -706,7 +706,7 @@ router.post('/get_by_regno', async (req, res) => {
      if (!regNo) {
       return res.status(400).json({ message: 'Missing regNo in request body' });
     }
-    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee ');
+    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
 
     const usersWithBase64Image = users.map(user => {
       return {
@@ -729,6 +729,7 @@ router.post('/get_by_regno', async (req, res) => {
         state: user.state,
         whatsAppno: user.whatsAppno,
         annualFee: user.annualFee,
+        paidAmount: user.paidAmount,
         
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
@@ -771,7 +772,7 @@ router.put('/update-fee/:userId',async (req, res) => {
   try {
     console.log("..........update...........");
     const userId = req.params.userId;
-    const { annualFee } = req.body;
+    const { regNo,firstName,phone,email,DOB,whatsAppno,address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember,pincode,district,state,enrollmentDate,annualFee } = req.body;
 
     // Find the user by ID
     const user = await signup.findById(userId);
@@ -781,6 +782,24 @@ router.put('/update-fee/:userId',async (req, res) => {
     }
 
     // Update user fields
+    user.regNo = regNo || user.regNo;
+    user.firstName = firstName || user.firstName;
+    user.phone = phone || user.phone;
+    user.email = email || user.email;
+    user.DOB = DOB || user.DOB;
+    user.whatsAppno = whatsAppno || user.whatsAppno;
+    user.address = address || user.address;
+    user.officeAddress = officeAddress || user.officeAddress;
+    user.clerkName1 = clerkName1 || user.clerkName1;
+    user.clerkName2 = clerkName2 || user.clerkName2;
+    user.clerkPhone1 = clerkPhone1 || user.clerkPhone1;
+    user.clerkPhone2 = clerkPhone2 || user.clerkPhone2;
+    user.bloodGroup = bloodGroup || user.bloodGroup;
+    user.welfareMember = welfareMember || user.welfareMember;
+    user.pincode = pincode || user.pincode;
+    user.district = district || user.district;
+    user.state = state || user.state;
+    user.enrollmentDate = enrollmentDate || user.enrollmentDate;
     user.annualFee = annualFee || user.annualFee;
     
 
