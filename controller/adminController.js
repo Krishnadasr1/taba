@@ -56,6 +56,7 @@ router.get('/list-new-users', async (req, res) => {
     // Fetch new users with pagination
     const users = await signup
       .find({ isRegisteredUser: false }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .sort({ firstName: 1 })
       .skip(skip)
       .limit(pageSize);
 
@@ -155,6 +156,7 @@ router.post('/list-valid-users', async (req, res) => {
     // Fetch users with pagination
     const users = await signup
       .find({ isRegisteredUser: true }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount')
+      .sort({ firstName: 1 })
       .skip(skip)
       .limit(pageSize);
 

@@ -188,6 +188,7 @@ router.post('/list_users', async (req, res) => {
     const users = await signup
       .find({ isRegisteredUser:true })
       .select('regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .sort({ firstName: 1 })
       .skip(skip)
       .limit(pageSize);
 
