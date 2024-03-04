@@ -658,7 +658,7 @@ router.post('/search_users', async (req, res) => {
           { isRegisteredUser: true }, // Additional condition for registered users
         ],
       },
-      '_id regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee'
+      '_id regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee enrollmentDate'
     )
       .skip(skip)
       .limit(pageSize);
