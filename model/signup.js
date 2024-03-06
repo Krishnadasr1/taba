@@ -11,11 +11,21 @@ const signupSchema = new mongoose.Schema({
     default:""
   },
   
+  nickName:{
+    type:String,
+    default:""
+  },
 
   phone: {
     type: String,
     default:""
   },
+
+  officeNo:{
+    type:String,
+    default:""
+  },
+  
   password: {
     type: String,
     default:""
@@ -87,6 +97,16 @@ const signupSchema = new mongoose.Schema({
 
   state: {
     type: String,
+    default:""
+  },
+
+  carNumber1:{
+    type:String,
+    default:""
+  },
+
+  carNumber2:{
+    type:String,
     default:""
   },
 

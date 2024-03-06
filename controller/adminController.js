@@ -55,7 +55,7 @@ router.get('/list-new-users', async (req, res) => {
 
     // Fetch new users with pagination
     const users = await signup
-      .find({ isRegisteredUser: false }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate')
+      .find({ isRegisteredUser: false }, '_id regNo phone officeNo image firstName nickName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate carNumber1 carNumber2')
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(pageSize);
@@ -66,7 +66,9 @@ router.get('/list-new-users', async (req, res) => {
         _id: user._id,
         regNo: user.regNo,
         phone: user.phone,
+        officeNo: user.officeNo,
         firstName: user.firstName,
+        nickName: user.nickName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -82,6 +84,8 @@ router.get('/list-new-users', async (req, res) => {
         district: user.district,
         state: user.state,
         whatsAppno: user.whatsAppno,
+        carNumber1: user.carNumber1,
+        carNumber2: user.carNumber2,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
@@ -155,7 +159,7 @@ router.post('/list-valid-users', async (req, res) => {
 
     // Fetch users with pagination
     const users = await signup
-      .find({ isRegisteredUser: true }, '_id regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount')
+      .find({ isRegisteredUser: true }, '_id regNo phone officeNo image firstName nickName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount carNumber1 carNumber2')
       .sort({ firstName: 1 })
       .skip(skip)
       .limit(pageSize);
@@ -170,8 +174,10 @@ router.post('/list-valid-users', async (req, res) => {
       usersWithBase64Image.push({
         _id: user._id,
         regNo: user.regNo,
+        officeNo: user.officeNo,
         phone: user.phone,
         firstName: user.firstName,
+        nickName: user.nickName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -189,6 +195,8 @@ router.post('/list-valid-users', async (req, res) => {
         whatsAppno: user.whatsAppno,
         annualFee: user.annualFee,
         paidAmount: user.paidAmount,
+        carNumber1: user.carNumber1,
+        carNumber2: user.carNumber2,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
         token: tokenData ? tokenData.token : null,
       });
@@ -253,7 +261,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { 
-    fileSize: 5000 * 1024, // 50 KB limit
+    fileSize: 10000 * 1024, // 50 KB limit
   },
   fileFilter: function (req, file, cb) {
     
@@ -636,7 +644,7 @@ router.post('/search_users', async (req, res) => {
     const escapedSearch = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
     // Use a case-insensitive regular expression for the escaped search query
-    const query = new RegExp(escapedSearch, 'i');
+    const query = new RegExp(`^${escapedSearch}`, 'i');
 
     // Calculate the skip value based on the page number
     const skip = (pageNumber - 1) * pageSize;
@@ -648,17 +656,20 @@ router.post('/search_users', async (req, res) => {
           {
             $or: [
               { firstName: query },
+              { nickName: query},
               { phone: query },
               { regNo: query },
               { DOB: query },
               { bloodGroup: query },
-              { welfareMember: query },
+              { carNumber1: query},
+              { carNumber2: query},
+              { welfareMember: search.toLowerCase() },
             ],
           },
-          { isRegisteredUser: true }, // Additional condition for registered users
+          { isRegisteredUser: true },
         ],
       },
-      '_id regNo phone image firstName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee enrollmentDate'
+      '_id regNo phone officeNo image firstName nickName email DOB whatsAppno officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember address pincode district state paidAmount annualFee enrollmentDate carNumber1 carNumber2'
     )
       .skip(skip)
       .limit(pageSize);
@@ -670,7 +681,9 @@ router.post('/search_users', async (req, res) => {
         enrollmentDate: user.enrollmentDate,
         regNo: user.regNo,
         phone: user.phone,
+        officeNo: user.officeNo,
         firstName: user.firstName,
+        nickName: user.nickName,
         email: user.email,
         DOB: user.DOB,
         whatsAppno: user.whatsAppno,
@@ -687,6 +700,8 @@ router.post('/search_users', async (req, res) => {
         state: user.state,
         paidAmount: user.paidAmount,
         annualFee: user.annualFee,
+        carNumber1: user.carNumber1,
+        carNumber2: user.carNumber2,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
@@ -708,13 +723,15 @@ router.post('/get_by_regno', async (req, res) => {
      if (!regNo) {
       return res.status(400).json({ message: 'Missing regNo in request body' });
     }
-    const users = await signup.find({regNo}, 'regNo phone image firstName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount');
+    const users = await signup.find({regNo}, 'regNo phone officeNo image firstName nickName email DOB address officeAddress clerkName1 clerkName2 clerkPhone1 clerkPhone2 bloodGroup welfareMember pincode district state whatsAppno enrollmentDate annualFee paidAmount carNumber1 carNumber2');
 
     const usersWithBase64Image = users.map(user => {
       return {
         regNo: user.regNo,
         phone: user.phone,
+        officeNo: user.officeNo,
         firstName: user.firstName,
+        nickName: user.nickName,
         email: user.email,
         DOB: user.DOB,
         address: user.address,
@@ -732,6 +749,8 @@ router.post('/get_by_regno', async (req, res) => {
         whatsAppno: user.whatsAppno,
         annualFee: user.annualFee,
         paidAmount: user.paidAmount,
+        carNumber1: user.carNumber1,
+        carNumber2: user.carNumber2,
         
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
@@ -770,11 +789,11 @@ router.post('/get_token', async (req, res) => {
   }
 });
 
-router.put('/update-fee/:userId',async (req, res) => {
+router.put('/update-fee/:userId',upload.single('image'),async (req, res) => {
   try {
     console.log("..........update...........");
     const userId = req.params.userId;
-    const { regNo,firstName,phone,email,DOB,whatsAppno,address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember,pincode,district,state,enrollmentDate,annualFee } = req.body;
+    const { regNo,firstName,nickName,officeNo,phone,email,DOB,whatsAppno,address,officeAddress,clerkName1,clerkName2,clerkPhone1,clerkPhone2,bloodGroup,welfareMember,pincode,district,state,carNumber1,carNumber2,enrollmentDate,annualFee } = req.body;
 
     // Find the user by ID
     const user = await signup.findById(userId);
@@ -786,7 +805,9 @@ router.put('/update-fee/:userId',async (req, res) => {
     // Update user fields
     user.regNo = regNo || user.regNo;
     user.firstName = firstName || user.firstName;
+    user.nickName = nickName || user.nickName;
     user.phone = phone || user.phone;
+    user.officeNo = officeNo || user.officeNo;
     user.email = email || user.email;
     user.DOB = DOB || user.DOB;
     user.whatsAppno = whatsAppno || user.whatsAppno;
@@ -803,7 +824,16 @@ router.put('/update-fee/:userId',async (req, res) => {
     user.state = state || user.state;
     user.enrollmentDate = enrollmentDate || user.enrollmentDate;
     user.annualFee = annualFee || user.annualFee;
+    user.carNumber1 = carNumber1 || user.carNumber1;
+    user.carNumber2 = carNumber2 || user.carNumber2;
     
+    if (req.file) {
+      user.image = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+        name: req.file.originalname,
+      };
+    }
 
     // Save the updated user to the database
     await user.save();
