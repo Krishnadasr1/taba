@@ -183,7 +183,7 @@ router.post('/check-user', async (req, res) => {
 router.post('/list_users', async (req, res) => {
   try {
     const page = parseInt(req.body.page) || 1;
-    const pageSize = 10;
+    const pageSize = 20;
 
     console.log(`Listing users - Page: ${page}, PageSize: ${pageSize}`);
 
