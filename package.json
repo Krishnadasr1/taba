@@ -16,10 +16,13 @@
     "cors": "^2.8.5",
     "cron": "^3.1.6",
     "dotenv": "^16.3.1",
+    "escape-string-regexp": "^5.0.0",
     "express": "^4.18.2",
     "firebase-admin": "^12.0.0",
     "generate-password": "^1.7.1",
     "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "lodash.escaperegexp": "^4.1.2",
     "mongodb": "^6.2.0",
     "mongoose": "^8.0.1",
     "multer": "^1.4.5-lts.1",
@@ -27,6 +30,8 @@
     "nodemailer": "^6.9.9",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5",
+    "xml": "^1.0.1"
   }
 }

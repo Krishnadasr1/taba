@@ -13,7 +13,9 @@ const about = require('../model/about');
 const Token = require('../model/token');
 const nodemailer = require('nodemailer');
 const generatePassword = require('generate-password');
-
+const xml = require('xml');
+const XLSX = require("xlsx");
+const aboutus = require('../model/aboutUs')
 
 router.post('/login', async (req, res) => {
   try {
@@ -972,4 +974,183 @@ router.post('/send-email', async (req, res) => {
 
 
 
-module.exports=router;
+router.get('/export',async (req, res) => {
+  const { field, value } = req.query;
+
+  try {
+    let query = {};
+
+    if (field && value) {
+       // Replace %2B with +
+       let modifiedValue = value.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+       // Replace %2D with -
+      //  value = value.replace(/%2D/g, '-');
+      query[field] = { $regex: new RegExp(`^${modifiedValue}$`, 'i') };
+    }
+    console.log(req.query)
+
+    const users = await signup.find(query);
+
+    if (users.length !== 0) {
+      try {
+        // Prepare headers for the Excel file dynamically based on User model fields
+        const headers = Object.keys(signup.schema.paths);
+
+        // Prepare values for the Excel file
+        const values = [
+          ['REPORT OF USERS'],
+          headers,
+          ...users.map(user => headers.map(header => formatCellValue(user[header])))
+        ];
+
+        // Generate the Excel file
+        const worksheet = XLSX.utils.aoa_to_sheet(values);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+        // Convert the workbook to a buffer
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+        // Set the appropriate headers for the response
+        res.setHeader('Content-Disposition', 'attachment; filename="users.xlsx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8');
+        res.setHeader('Content-Length', buffer.length);
+
+        // Send the buffer as the response
+        res.send(buffer);
+
+      } catch (error) {
+        console.error('Failed to generate Excel file:', error);
+        res.status(500).send('Failed to generate Excel file');
+      }
+    } else {
+      res.status(404).json({ message: 'No users found for the specified criteria' });
+    }
+
+  } catch (error) {
+    console.error('Failed to fetch users from MongoDB:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+function formatCellValue(value) {
+  if (value instanceof Date) {
+    // Format date as per your requirement
+    return value.toISOString().split('T')[0];
+  }
+  return value || '';
+}
+
+router.get('/export-data', async (req, res) => {
+  try {
+    const users = await signup.find({});
+
+    if (users.length !== 0) {
+      try {
+        // Prepare headers for the Excel file dynamically based on User model fields
+        const headers = Object.keys(signup.schema.paths);
+
+        // Prepare values for the Excel file
+        const values = [
+          ['REPORT OF USERS'],
+          headers,
+          ...users.map(user => headers.map(header => formatCellValue(user[header])))
+        ];
+
+        // Generate the Excel file
+        const worksheet = XLSX.utils.aoa_to_sheet(values);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+        // Convert the workbook to a buffer
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+        // Set the appropriate headers for the response
+        res.setHeader('Content-Disposition', 'attachment; filename="users.xlsx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8');
+        res.setHeader('Content-Length', buffer.length);
+
+        // Send the buffer as the response
+        res.send(buffer);
+
+      } catch (error) {
+        console.error('Failed to generate Excel file:', error);
+        res.status(500).send('Failed to generate Excel file');
+      }
+    } else {
+      res.status(404).json({ message: 'No users found' });
+    }
+
+  } catch (error) {
+    console.error('Failed to fetch users from MongoDB:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/aboutus', async (req, res) => {
+  try {
+    console.log("listing")
+    const users = await aboutus.find({}, 'image description address email phone  _id');
+
+    // Convert binary image data to Base64
+    const usersWithBase64Image = users.map(user => {
+      return {
+        description:user.description,
+        address:user.address,
+        email:user.email,
+        phone:user.phone,
+        _id:user._id,
+        image: user.image && user.image.data ? user.image.data.toString('base64') : null,
+      };
+    });
+
+    // Respond with the array of user data including Base64 image
+    res.status(200).json(usersWithBase64Image);
+  } catch (error) {
+    console.log(error);
+
+    // Respond with a 500 Internal Server Error
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+router.put('/update-aboutus/:userId', upload.single('image'), async (req, res) => {
+  try {
+    console.log("..........update...........");
+    const userId = req.params.userId;
+    const { address,email,phone,description  } = req.body;
+    const user = await aboutus.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user fields
+    
+    user.address = address || user.address;
+    user.email = email || user.email;
+    user.phone = phone || user.phone;
+    user.description = description || user.description;
+
+    
+
+    // Check if an image was uploaded
+    if (req.file) {
+      user.image = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+        name: req.file.originalname,
+      };
+    }
+
+    // Save the updated user to the database
+    await user.save();
+
+    res.status(200).json({ message: 'User updated successfully' });
+  } catch (error) {
+    handleRegistrationError(error, res);
+  }
+});
+
+module.exports = router;
