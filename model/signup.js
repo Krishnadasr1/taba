@@ -112,7 +112,7 @@ const signupSchema = new mongoose.Schema({
 
   annualFee: {
     type: String,
-    default:""
+    default:"0"
   },
 
   enrollmentDate: {
