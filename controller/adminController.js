@@ -323,6 +323,7 @@ router.get('/about', async (req, res) => {
         name:user.name,
         description:user.description,
         _id:user._id,
+        phone:user.phone,
         image: user.image && user.image.data ? user.image.data.toString('base64') : null,
       };
     });
@@ -341,7 +342,7 @@ router.put('/update-about/:userId', upload.single('image'), async (req, res) => 
   try {
     console.log("..........update...........");
     const userId = req.params.userId;
-    const { name,description  } = req.body;
+    const { name,description,phone  } = req.body;
     console.log(name,description)
     const user = await about.findById(userId);
 
@@ -353,7 +354,7 @@ router.put('/update-about/:userId', upload.single('image'), async (req, res) => 
     
     user.name = name || user.name;
     user.description = description || user.description;
-
+    user.phone = phone || user.phone;
     
 
     // Check if an image was uploaded

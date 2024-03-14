@@ -8,6 +8,10 @@ const aboutSchema = new mongoose.Schema({
     type: String
   },
 
+  phone:{
+    type:String
+  },
+
   image: {
 
     data:{

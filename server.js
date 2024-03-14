@@ -22,8 +22,8 @@ mongoose.connection.on("connected", (err, res) => {
 const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
-      origin: '*', // Adjust this to allow specific origins
-      methods: ['GET', 'POST'] // Define the methods you wish to allow
+      origin: '*', 
+      methods: ['GET', 'POST'] 
     }
   });
 
