@@ -315,7 +315,7 @@ router.post('/upload', (req, res) => {
 router.get('/about', async (req, res) => {
   try {
     console.log("listing")
-    const users = await about.find({}, 'image name description _id');
+    const users = await about.find({}, 'image name description _id phone');
 
     // Convert binary image data to Base64
     const usersWithBase64Image = users.map(user => {
