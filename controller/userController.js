@@ -133,11 +133,11 @@ router.post('/login', async (req, res) => {
     }
 
     if(user.isValidUser=="false"){
-      return res.status(401).json({message:'please reset your password to continue'});
+      return res.status(401).json({message:'Please reset your password to continue'});
     }
 
     if(user.isRegisteredUser=="false"){
-      return res.status(403).json({message: 'user not approved yet'});
+      return res.status(403).json({message: 'User not approved yet'});
     }
 
     // Generate a JWT token
