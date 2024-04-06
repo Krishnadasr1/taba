@@ -447,11 +447,11 @@ cron.schedule('0 0 1 * *', async () => {
       let monthlyIncrement = 0;
 
       if (experienceYears >= 0 && experienceYears <= 5) {
-        monthlyIncrement = 25;
-      } else if (experienceYears >= 6 && experienceYears <= 15) {
         monthlyIncrement = 50;
-      } else if (experienceYears >= 16 && experienceYears <= 50) {
+      } else if (experienceYears >= 6 && experienceYears <= 15) {
         monthlyIncrement = 100;
+      } else if (experienceYears >= 16 && experienceYears <= 50) {
+        monthlyIncrement = 150;
       }
 
       // Check if user.annualFee is a valid number string
