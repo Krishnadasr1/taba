@@ -14,7 +14,7 @@ const notification = require('../model/notification');
 const serviceAccount = require('../config/push-notification.json');
 const broadcast = require('../model/broadcast');
 const Token = require('../model/token');
-
+const cron = require('node-cron');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -210,6 +210,125 @@ router.post('/get-message-count', async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
+
+async function sendBirthdayNotification(regNo, registrationToken) {
+  const title = 'Happy Birthday🎂';
+  const body = 'Wishing you a Happy birthday from The Alleppey Bar Association';
   
+  const message = {
+    notification: {
+      title,
+      body,
+    },
+    token: registrationToken,
+  };
+
+  try {
+    
+    await admin.messaging().send(message);
+
+    
+    const newNotification = new notification({
+      regNo,
+      registrationToken,
+      title,
+      body,
+    });
+    await newNotification.save();
+
+    console.log(`Birthday notification sent and saved for ${regNo}`);
+  } catch (error) {
+    console.error('Error sending or saving birthday notification:', error);
+  }
+}
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const currentDate = new Date();
+    const currentDay = currentDate.getDate();
+    const currentMonth = currentDate.getMonth() + 1; 
+
+    
+    const users = await signup.aggregate([
+      {
+        $addFields: {
+          dobDay: {
+            $cond: {
+              if: { $ne: ["$DOB", ""] },
+              then: {
+                $toInt: {
+                  $let: {
+                    vars: {
+                      splitDOB: {
+                        $cond: [
+                          { $eq: [{ $indexOfBytes: ["$DOB", "/"] }, -1] }, 
+                          { $split: ["$DOB", "-"] }, 
+                          { $split: ["$DOB", "/"] } 
+                        ]
+                      }
+                    },
+                    in: { $arrayElemAt: ["$$splitDOB", 0] }
+                  }
+                }
+              },
+              else: null
+            }
+          },
+          dobMonth: {
+            $cond: {
+              if: { $ne: ["$DOB", ""] },
+              then: {
+                $toInt: {
+                  $let: {
+                    vars: {
+                      splitDOB: {
+                        $cond: [
+                          { $eq: [{ $indexOfBytes: ["$DOB", "/"] }, -1] }, 
+                          { $split: ["$DOB", "-"] }, 
+                          { $split: ["$DOB", "/"] } 
+                        ]
+                      }
+                    },
+                    in: { $arrayElemAt: ["$$splitDOB", 1] }
+                  }
+                }
+              },
+              else: null
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { dobDay: currentDay, dobMonth: currentMonth },
+            { dobDay: { $regex: new RegExp(`^${currentDay}$`, 'i') }, dobMonth: { $regex: new RegExp(`^${currentMonth}$`, 'i') } }
+          ]
+        }
+      }
+    ]);
+
+   
+    for (const user of users) {
+      
+      const { regNo } = user;
+      const userToken = await Token.findOne({ regNo });
+
+      if (userToken) {
+       
+        await sendBirthdayNotification(regNo, userToken.token);
+      } else {
+        console.error(`Token not found for user with regNo ${regNo}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error processing cron job:', error);
+  }
+}, {
+  timezone: 'Asia/Kolkata' 
+});
+
 
   module.exports=router;
